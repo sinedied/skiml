@@ -7,7 +7,7 @@ http://localhost:3030/scores
 
 ###
 
-POST http://localhost:3030/scores
+PUT http://localhost:3030/scores
 Content-Type: application/json
 
 {

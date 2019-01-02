@@ -1,3 +1,12 @@
+function allowUpsert(context) {
+  console.log('here')
+  context.params = {
+    ...context.params,
+    nedb: { upsert: true }
+  };
+  return context;
+}
+
 function mapIdOnWrite(context) {
   const id = context.data.playerId;
   if (id == null) {
@@ -34,8 +43,8 @@ module.exports = {
     find: [],
     get: [],
     create: [mapIdOnWrite],
-    update: [mapIdOnWrite],
-    patch: [mapIdOnWrite],
+    update: [mapIdOnWrite, allowUpsert],
+    patch: [mapIdOnWrite, allowUpsert],
     remove: []
   },
 
