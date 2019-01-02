@@ -11,6 +11,6 @@ POST http://localhost:3030/scores
 Content-Type: application/json
 
 {
-  "playerId": 0,
+  "playerId": 1,
   "score": 123
 }

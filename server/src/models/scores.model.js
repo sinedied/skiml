@@ -4,7 +4,7 @@ const path = require('path');
 /*
  Schema:
  {
-   "playerId": "number",
+   "playerId": "number",  // mapped to _id via hooks (NeDB limitation)
    "score": "number"
  }
 */
