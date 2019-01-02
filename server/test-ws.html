@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <body>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/core-js/2.1.4/core.min.js"></script>
+    <script src="http://unpkg.com/@feathersjs/client@^3.0.0/dist/feathers.js"></script>
+    <script src="http://unpkg.com/socket.io-client@1.7.3/dist/socket.io.js"></script>
+    <script>
+      // Socket.io is exposed as the `io` global.
+      var socket = io('http://localhost:3030');
+      // @feathersjs/client is exposed as the `feathers` global.
+      var app = feathers();
+
+      // Set up Socket.io client with the socket
+      app.configure(feathers.socketio(socket));
+
+      // Receive real-time events through Socket.io
+      app.service('scores')
+        .on('created', message => console.log('New score added', message));
+
+      // Call the `messages` service
+      app.service('scores').create({
+        playerId: 0,
+        score: 200
+      });
+
+      // feathers.errors is an object with all of the custom error types.
+    </script>
+  </body>
+</html>
+
