@@ -17,18 +17,18 @@
       app.configure(feathers.socketio(socket));
 
       function refresh() {
-        app.service('scores').find({ query: {} }, (error, data) => {
-          console.log('scores', data);
-        });
-        fetch('http://localhost:3030/scores')
-          .then(res => res.json())
-          .then(data => {
-            const scoresDiv = window.scores;
-            scoresDiv.innerHTML = data
-              .slice(0, 10)
-              .map((score, i) => `${i + 1}. [id: ${score.playerId}] ${score.score}`).join('<br>');
-            console.log('scores', data);
-          });
+        app.service('scores').find({}).then(display);
+        // fetch('http://localhost:3030/scores')
+        //   .then(res => res.json())
+        //   .then(display);
+      }
+
+      function display(data) {
+        const scoresDiv = window.scores;
+        scoresDiv.innerHTML = data
+          .slice(0, 10)
+          .map((score, i) => `${i + 1}. [id: ${score.playerId}] ${score.score}`).join('<br>');
+        console.log('scores', data);
       }
 
       // Receive real-time events through Socket.io
@@ -37,16 +37,14 @@
         .on('updated', () => refresh())
         .on('removed', () => refresh());
 
-      // Call the `messages` service
+      // Initial refresh
+      refresh();
+
+      // Update data
       app.service('scores').update(6, {
         playerId: 4,
         score: 200
       });
-
-      // app.service('scores').create({
-      //   playerId: 1,
-      //   score: 300
-      // });
 
       app.service('scores').update(6, {
         playerId: 4,
