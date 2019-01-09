@@ -1,5 +1,6 @@
 var SpriteArray = require('./spriteArray');
 var EventedLoop = require('eventedloop');
+var AiBrain = require('./aiBrain');
 
 (function (global) {
 	function Game (mainCanvas, player) {
@@ -14,6 +15,8 @@ var EventedLoop = require('eventedloop');
 		var beforeCycleCallbacks = [];
 		var afterCycleCallbacks = [];
 		var gameLoop = new EventedLoop();
+		var aiBrain = new AiBrain();
+		aiBrain.reset();
 
 		this.addStaticObject = function (sprite) {
 			staticObjects.push(sprite);
@@ -69,7 +72,13 @@ var EventedLoop = require('eventedloop');
 			// Clear canvas
 			var mouseMapPosition = dContext.canvasPositionToMapPosition([mouseX, mouseY]);
 
+			let currentSituation = aiBrain.cycle(staticObjects, movingObjects, player);
+
 			if (!player.isJumping) {
+				let aiCommand = aiBrain.getAICommand(currentSituation);
+				if (aiCommand) {
+					mouseMapPosition = aiCommand.mouseMapPosition;
+				}
 				player.setMapPositionTarget(mouseMapPosition[0], mouseMapPosition[1]);
 			}
 
@@ -145,6 +154,7 @@ var EventedLoop = require('eventedloop');
 			mouseY = 0;
 			player.reset();
 			player.setMapPosition(0, 0, 0);
+			aiBrain.reset();
 			this.start();
 		}.bind(this);
 
