@@ -3,7 +3,7 @@ var Sprite = require('./sprite');
 (function(global) {
 	function Monster(data) {
 		var that = new Sprite(data);
-		var super_draw = that.superior('draw');
+		var super_draw = that.draw.bind(that);
 		var spriteVersion = 1;
 		var eatingStage = 0;
 		var standardSpeed = 6;

@@ -23,11 +23,11 @@ if (typeof navigator !== 'undefined') {
 		};
 		var that = new Sprite(data);
 		var sup = {
-			draw: that.superior('draw'),
-			cycle: that.superior('cycle'),
-			getSpeedX: that.superior('getSpeedX'),
-			getSpeedY: that.superior('getSpeedY'),
-			hits: that.superior('hits')
+			draw: that.draw.bind(that),
+			cycle: that.cycle.bind(that),
+			getSpeedX: that.getSpeedX.bind(that),
+			getSpeedY: that.getSpeedY.bind(that),
+			hits: that.hits.bind(that)
 		};
 		var directions = {
 			esEast: function(xDiff) { return xDiff > 300; },

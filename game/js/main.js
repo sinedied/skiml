@@ -1,6 +1,5 @@
 // Global dependencies which return no modules
 require('./lib/canvasRenderingContext2DExtensions');
-require('./lib/extenders');
 require('./lib/plugins');
 
 // External dependencies

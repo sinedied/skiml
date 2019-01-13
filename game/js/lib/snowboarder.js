@@ -4,8 +4,8 @@ var Sprite = require('./sprite');
 	function Snowboarder(data) {
 		var that = new Sprite(data);
 		var sup = {
-			draw: that.superior('draw'),
-			cycle: that.superior('cycle')
+			draw: that.draw.bind(that),
+			cycle: that.cycle.bind(that)
 		};
 		var directions = {
 			sEast: function(xDiff) { return xDiff > 0; },
