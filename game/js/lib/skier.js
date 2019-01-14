@@ -144,6 +144,8 @@ if (typeof navigator !== 'undefined') {
 			return 'south';
 		}
 
+		that.getMyDiscreteDirection = function() {return getDiscreteDirection();}
+
 		function setDiscreteDirection(d) {
 			if (discreteDirections[d]) {
 				that.setDirection(discreteDirections[d]);

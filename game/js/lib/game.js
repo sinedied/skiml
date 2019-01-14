@@ -72,10 +72,10 @@ var AiBrain = require('./aiBrain');
 			// Clear canvas
 			var mouseMapPosition = dContext.canvasPositionToMapPosition([mouseX, mouseY]);
 
-			let currentSituation = aiBrain.cycle(staticObjects, movingObjects, player);
+			let currentSituation = aiBrain.cycle(mouseMapPosition, staticObjects, movingObjects, player);
 
 			if (!player.isJumping) {
-				let aiCommand = aiBrain.getAICommand(currentSituation);
+				let aiCommand = aiBrain.getAICommand(player, currentSituation);
 				if (aiCommand) {
 					mouseMapPosition = aiCommand.mouseMapPosition;
 				}
