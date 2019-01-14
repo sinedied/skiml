@@ -1,5 +1,4 @@
 function allowUpsert(context) {
-  console.log('here')
   context.params = {
     ...context.params,
     nedb: { upsert: true }
