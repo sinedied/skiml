@@ -34,17 +34,17 @@
         <script src="js/vendor/modernizr-2.6.2.min.js"></script>
     </head>
     <body>
-        <div id="score-dialog-form" title="Congratulations!">
+        <div id="score-dialog-form">
             <p class="validateTips">All form fields are required.</p>
             
             <form>
                 <fieldset>
-                <label for="name">Name</label>
-                <input type="text" name="name" id="name" value="Jane Smith" class="text ui-widget-content ui-corner-all">
-                <label for="email">Email</label>
-                <input type="text" name="email" id="email" value="jane@smith.com" class="text ui-widget-content ui-corner-all">
-                <label for="password">Password</label>
-                <input type="password" name="password" id="password" value="xxxxxxx" class="text ui-widget-content ui-corner-all">
+                <label for="name">Name:</label>
+                <input type="text" name="name" id="user-name" placeholder="Insert your name" class="text ui-widget-content ui-corner-all">
+                <br />
+                <br />
+                <label for="email">E-mail:</label>
+                <input type="text" name="email" id="user-email" placeholder="Insert your e-mail" class="text ui-widget-content ui-corner-all">
             
                 <!-- Allow form submission with keyboard without duplicating the dialog button -->
                 <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
@@ -71,19 +71,38 @@
         <script src="js/vendor/sugar-1.3.7.min.js"></script>
         <script src="dist/skifree.js"></script>
         <script>
-            dialog = $( "#score-dialog-form" ).dialog({
+            dialog = $("#score-dialog-form").dialog({
                 autoOpen: false,
                 height: 400,
                 width: 350,
                 modal: true,
                 buttons: {
                     "Submit your score": () => {
+                        var name = $('#user-name').val();
+                        var email = $('#user-email').val();
+                        console.log('Email: ' + email + ' Name: ' + name);
+                        var myHeaders = new Headers();
+                        myHeaders.append('Content-Type', 'application/json');
+                        debugger;
+                        fetch("http://localhost:3030/scores", {
+                            method: "POST",
+                            headers: myHeaders,
+                            body: JSON.stringify({
+                                playerId: 21,
+                                name: name,
+                                score: $("#score-dialog-form").data('scoreValue')
+                            })
+                        });
                         dialog.dialog('close');
                     }
                 },
                 close: () => { console.log('Closed score form') }
             });
-            window.addEventListener('open-score-dialog', () => {dialog.dialog('open')});
+            window.addEventListener('open-score-dialog', (evt) => {
+                $("#score-dialog-form").dialog({ title: 'Congratulations, you got ' + evt.detail + ' points!' });
+                $("#score-dialog-form").data('scoreValue', evt.detail);
+                dialog.dialog('open');
+            });
         </script>
     </body>
 </html>
