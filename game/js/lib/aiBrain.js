@@ -1,19 +1,43 @@
-var Brain = require('brain.js');
+var tf = require('@tensorflow/tfjs');
 
 (function (global) {
-	function AiBrain () {
-        this.aiBrainJs = undefined;
+	function AiBrain () {;
+	    this.model = undefined
         this.step = 0;
 
         this.trainingVectors = []; // TODO we should use stream input for brainjs
 
-        this.LEARNING_STEP_COUNT = 100;
-        this.REPLAY_STEP_COUNT = 300;
+        this.LEARNING_STEP_COUNT = 500;
+        this.REPLAY_STEP_COUNT = 10000;
+        this.MODEL_INPUT_SIZE = 16
+        this.MODEL_OUTPUT_SIZE = 1
 
         this.reset = function() {
-            this.aiBrainJs = undefined;
+            this.model = undefined;
             this.step = 0;
-            console.log('aiBrain: reset');
+
+            ('aiBrain: reset');
+        }
+
+        this.buildModel = function() {
+            this.model = tf.sequential();
+            this.model.add(tf.layers.dense({units: 10, inputShape: [this.MODEL_INPUT_SIZE]}));
+            this.model.add(tf.layers.dense({units: this.MODEL_OUTPUT_SIZE}));
+            this.model.add(tf.layers.activation('sigmoid'))
+            this.model.compile({loss: 'meanSquaredError', optimizer: 'adam'})
+        }
+
+        this.trainModel = function(inputs, outputs) {
+            const inputTensors = tf.tensor2d(inputs, [this.LEARNING_STEP_COUNT, this.MODEL_INPUT_SIZE])
+            const outputTensors = tf.tensor2d(outputs, [this.LEARNING_STEP_COUNT, this.MODEL_OUTPUT_SIZE])
+            this.model.fit(inputTensors, outputTensors, {epochs: 10})
+        }
+
+        this.predictModel = function(inputs) {
+            const inputTensors = tf.tensor2d(inputs, [1, this.MODEL_INPUT_SIZE]);
+            modelPrediction = this.model.predict(inputTensors);
+            modelPrediction.print();
+            return modelPrediction.get(0, 0)
         }
 
         this.cycle = function(mouseMapPosition, staticObjects, movingObjects, player) {
@@ -21,7 +45,7 @@ var Brain = require('brain.js');
 
             if (this.REPLAY_STEP_COUNT < this.step) {
                 // permet d'arreter les logs
-                this.aiBrainJs = undefined;
+                this.model = undefined;
                 return currentSituation;
             }
 
@@ -37,23 +61,14 @@ var Brain = require('brain.js');
                     outputs: { angle: this.getAngle(mouseMapPosition, player.mapPosition) }
                 });
             } else if (this.step < this.REPLAY_STEP_COUNT) {
-                if (!this.aiBrainJs) {
+                if (!this.model) {
                     console.log('aiBrain: train AI');
                     // we create and train the IA
                     // TODO
 
-                    					// on calcule la fonction
-					const config = {
-						binaryThresh: 0.5,
-						hiddenLayers: [3],     // array of ints for the sizes of the hidden layers in the network
-						activation: 'sigmoid',  // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
-						leakyReluAlpha: 0.01   // supported for activation type 'leaky-relu'
-					};
+                    this.buildModel();
 
-					// create a simple feed forward neural network with backpropagation
-                    this.aiBrainJs = new Brain.NeuralNetwork(config);
-
-					if (this.aiBrainJs) {
+					if (this.model) {
 						// train the IA
 						let dataForTraining = this.trainingVectors.map(x => {
 							return {input: x.inputs.convert(), output: [x.outputs.angle]};
@@ -63,11 +78,8 @@ var Brain = require('brain.js');
                         // echantillonnage?
 
                         // faire un pre apprentissage base sur du preprocessing (transfert de learning)
-							
 
-						console.log("inputs: ", dataForTraining);
-
-                        this.aiBrainJs.train(dataForTraining);
+                        this.trainModel(dataForTraining.flatMap(e => e.input), dataForTraining.flatMap(e => e.output));
                           
                         // pour le test
                         // this.aiBrainJs.train([{ input: [0, 0], output: [0] },
@@ -92,12 +104,12 @@ var Brain = require('brain.js');
 
         this.getAICommand = function(player, currentSituation) {
            
-            if (currentSituation && this.aiBrainJs) {
+            if (currentSituation && this.model) {
                 // we return the command calculated by the IA
                 // TODO
                 console.log('aiBrain: getAICommand');
 
-                const output = this.aiBrainJs.run(currentSituation.convert());
+                const output = this.predictModel(currentSituation.convert())
                 console.log("output", output);
                 const angle = output * Math.PI / 2;
                 console.log("angle", angle);
@@ -182,7 +194,7 @@ var Brain = require('brain.js');
             
             // we take 5 nearest objects
             iaInputs.envInputs.sort((a, b) => a.dist - b.dist);
-            iaInputs.envInputs.slice(0, 5);
+            iaInputs.envInputs = iaInputs.envInputs.slice(0, 5);
             
 			// we complete up to 5
 			for (let i = 0; i < 5; ++i) {
