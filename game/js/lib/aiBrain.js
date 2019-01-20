@@ -4,13 +4,18 @@ var tf = require('@tensorflow/tfjs');
 	function AiBrain () {;
 	    this.model = undefined
         this.step = 0;
+        this.useMouse = undefined;
 
         this.trainingVectors = []; // TODO we should use stream input for brainjs
 
         this.LEARNING_STEP_COUNT = 500;
         this.REPLAY_STEP_COUNT = 10000;
         this.MODEL_INPUT_SIZE = 16
-        this.MODEL_OUTPUT_SIZE = 1
+        if (this.useMouse) {
+            this.MODEL_OUTPUT_SIZE = 1
+        } else {
+            this.MODEL_OUTPUT_SIZE = 4
+        }
 
         this.reset = function() {
             this.model = undefined;
@@ -23,8 +28,14 @@ var tf = require('@tensorflow/tfjs');
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({units: 10, inputShape: [this.MODEL_INPUT_SIZE]}));
             this.model.add(tf.layers.dense({units: this.MODEL_OUTPUT_SIZE}));
-            this.model.add(tf.layers.activation('sigmoid'))
-            this.model.compile({loss: 'meanSquaredError', optimizer: 'adam'})
+
+            if (this.useMouse) {
+                this.model.add(tf.layers.activation('sigmoid'))
+                this.model.compile({loss: 'meanSquaredError', optimizer: 'adam'})
+            } else {
+                this.model.add(tf.layers.activation('sigmoid'))
+                this.model.compile({loss: 'categoricalCrossentropy', optimizer: 'adam'})
+            }
         }
 
         this.trainModel = function(inputs, outputs) {
@@ -37,7 +48,14 @@ var tf = require('@tensorflow/tfjs');
             const inputTensors = tf.tensor2d(inputs, [1, this.MODEL_INPUT_SIZE]);
             modelPrediction = this.model.predict(inputTensors);
             modelPrediction.print();
-            return modelPrediction.get(0, 0)
+            if (this.useMouse) {
+                return modelPrediction.get(0, 0);
+            } else {
+                return [modelPrediction.get(0, 0), // match skier.CMD_... enum
+                    modelPrediction.get(0, 1),
+                    modelPrediction.get(0, 2),
+                    modelPrediction.get(0, 3)];
+            }
         }
 
         this.cycle = function(mouseMapPosition, staticObjects, movingObjects, player) {
@@ -53,16 +71,30 @@ var tf = require('@tensorflow/tfjs');
                 console.log('aiBrain: record');
                 // we learn (sampled learning, only when there is change in the inputs)
                 // TODO
-                
+                 
                 console.log("situation: ", currentSituation);
 
-                this.trainingVectors.push({
-                    inputs: currentSituation,
-                    outputs: { angle: this.getAngle(mouseMapPosition, player.mapPosition) }
-                });
+                if (this.useMouse) {
+                    this.trainingVectors.push({
+                        inputs: currentSituation,
+                        outputs: this.getAngle(mouseMapPosition, player.mapPosition)
+                    });
+                } else {
+                    let outputs = [0.0, 0.0, 0.0, 0.0];
+                    outputs[player.lastCmd] = 1.0;
+                    console.log('player.lastCmd: ', player.lastCmd);
+                    if (currentSituation.playerInputs.dir !== 0 // east
+                        && currentSituation.playerInputs.dir !== 6) { // west
+                        this.trainingVectors.push({
+                            inputs: currentSituation,
+                            outputs: { outputs }
+                        });
+                    }
+                }
             } else if (this.step < this.REPLAY_STEP_COUNT) {
                 if (!this.model) {
                     console.log('aiBrain: train AI');
+                    alert('It\'s up to your AI...');
                     // we create and train the IA
                     // TODO
 
@@ -71,7 +103,7 @@ var tf = require('@tensorflow/tfjs');
 					if (this.model) {
 						// train the IA
 						let dataForTraining = this.trainingVectors.map(x => {
-							return {input: x.inputs.convert(), output: [x.outputs.angle]};
+							return {input: x.inputs.convert(), output: [x.outputs]};
 						})
                         // utiliser l'API de streaming
 
@@ -80,16 +112,7 @@ var tf = require('@tensorflow/tfjs');
                         // faire un pre apprentissage base sur du preprocessing (transfert de learning)
 
                         this.trainModel(dataForTraining.flatMap(e => e.input), dataForTraining.flatMap(e => e.output));
-                          
-                        // pour le test
-                        // this.aiBrainJs.train([{ input: [0, 0], output: [0] },
-                        // { input: [0, 1], output: [1] },
-                        // { input: [1, 0], output: [1] },
-                        // { input: [1, 1], output: [0] }]);
 					}
-					
-                    // alert the user about the switch to the replay mode
-                    // TODO
                 }
                 console.log('aiBrain: replay');
                 // we replay via getAICommand
@@ -105,21 +128,26 @@ var tf = require('@tensorflow/tfjs');
         this.getAICommand = function(player, currentSituation) {
            
             if (currentSituation && this.model) {
-                // we return the command calculated by the IA
-                // TODO
-                console.log('aiBrain: getAICommand');
 
-                const output = this.predictModel(currentSituation.convert())
-                console.log("output", output);
-                const angle = output * Math.PI / 2;
-                console.log("angle", angle);
-                let mouseMapPosition = [0,0];
-                let delta = {x: 100 * Math.sin(angle), y: 100 * Math.cos(angle)};
-                console.log("delta", delta);
-                mouseMapPosition[0] = player.canvasX + delta.x;
-                mouseMapPosition[1] = player.canvasX + delta.y;
-                console.log("mouseMapPosition", mouseMapPosition);
-                return {mouseMapPosition: mouseMapPosition};
+                if (this.useMouse) {
+                    // we return the command calculated by the IA
+                    // TODO
+                    console.log('aiBrain: getAICommand');
+
+                    const output = this.predictModel(currentSituation.convert())
+                    console.log("output", output);
+                    const angle = output * Math.PI / 2;
+                    console.log("angle", angle);
+                    let mouseMapPosition = [0, 0];
+                    let delta = { x: 100 * Math.sin(angle), y: 100 * Math.cos(angle) };
+                    console.log("delta", delta);
+                    mouseMapPosition[0] = player.canvasX + delta.x;
+                    mouseMapPosition[1] = player.canvasX + delta.y;
+                    console.log("mouseMapPosition", mouseMapPosition);
+                    return { mouseMapPosition: mouseMapPosition };
+                } else {
+                    return this.predictModel(currentSituation.convert());
+                }
             }
             return undefined;
         }
@@ -158,16 +186,24 @@ var tf = require('@tensorflow/tfjs');
 				playerInputs: {},
 				dummyInput: {x: 0, y: 0, type: 0, dist: 0},
 				convert: function() {
-					let result = this.envInputs.flatMap(x => [x.x / 2000, x.y / 2000, x.type]); // 2000 pour normaliser a la hache
-					// FPETODO normaliser entre 0 et 1
+					let result = this.envInputs.flatMap(x => [x.x, x.y, x.type]); // normaliser a la hache??
 					result.push(this.playerInputs.dir);
 					return result;
 				}
 			}
             // TODO ajouter la vitesse du skier comme entree??
 
-            // FPETODO player.direction est parfois undefined ...
-			iaInputs.playerInputs = { dir: 0 }; // pour test train player.direction };
+            const directionLabelToNum = {
+                east: 0,
+                esEast: 1,
+                sEast: 2,
+                south: 3,
+                sWest: 4,
+                wsWest: 5,
+                west: 6,
+                south: 7 
+            };
+			iaInputs.playerInputs = { dir: directionLabelToNum[player.getMyDiscreteDirection()] };
 
 			staticObjects.each(obj => {
 				if (!obj.deleted) {

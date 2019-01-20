@@ -177,7 +177,14 @@ if (typeof navigator !== 'undefined') {
 			}
 		}
 
+		that.CMD_STOP = 0;
+		that.CMD_EAST = 1;
+		that.CMD_STRAIGHT = 2;
+		that.CMD_WEST = 3;
+		that.lastCmd = that.CMD_STRAIGHT;
+
 		that.stop = function () {
+			that.lastCmd = that.CMD_STOP;
 			if (that.direction > 180) {
 				setDiscreteDirection('west');
 			} else {
@@ -186,6 +193,7 @@ if (typeof navigator !== 'undefined') {
 		};
 
 		that.turnEast = function () {
+			that.lastCmd = that.CMD_EAST;
 			var discreteDirection = getDiscreteDirection();
 
 			switch (discreteDirection) {
@@ -214,6 +222,7 @@ if (typeof navigator !== 'undefined') {
 		};
 
 		that.turnWest = function () {
+			that.lastCmd = that.CMD_WEST;
 			var discreteDirection = getDiscreteDirection();
 
 			switch (discreteDirection) {
@@ -247,6 +256,7 @@ if (typeof navigator !== 'undefined') {
 
 		that.stepEast = function () {
 			that.mapPosition[0] += that.speed * 2;
+			that.lastMove = 0;
 		};
 
 		that.setMapPositionTarget = function (x, y) {

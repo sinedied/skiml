@@ -75,11 +75,32 @@ var AiBrain = require('./aiBrain');
 			let currentSituation = aiBrain.cycle(mouseMapPosition, staticObjects, movingObjects, player);
 
 			if (!player.isJumping) {
-				let aiCommand = aiBrain.getAICommand(player, currentSituation);
-				if (aiCommand) {
-					mouseMapPosition = aiCommand.mouseMapPosition;
+				if (player.useMouse) {
+					let aiCommand = aiBrain.getAICommand(player, currentSituation);
+					if (aiCommand) {
+						mouseMapPosition = aiCommand.mouseMapPosition;
+					}
+					player.setMapPositionTarget(mouseMapPosition[0], mouseMapPosition[1]);
+				} else {
+					let aiCommand = aiBrain.getAICommand(player, currentSituation);
+					if (aiCommand) {
+						let maxVal = -1;
+						let maxIndex = -1;
+						aiCommand.forEach((x, i) => { if (i > 0 && (x > maxVal || maxVal === -1)) {maxIndex = i; maxVal = x} });
+						switch (maxIndex) {
+							case player.CMD_STRAIGHT: default:
+								break;
+							case player.CMD_EAST:
+								player.turnEast();
+								break;
+							case player.CMD_WEST:
+								player.turnWest();
+								break;
+						}
+					}
+					// use player.mapPosition[0] inhibit mouse handling while preserving move
+					player.setMapPositionTarget(player.mapPosition[0], mouseMapPosition[1]);
 				}
-				player.setMapPositionTarget(mouseMapPosition[0], mouseMapPosition[1]);
 			}
 
 			intervalNum++;
@@ -102,7 +123,7 @@ var AiBrain = require('./aiBrain');
 					uiElement.cycle();
 				}
 			});
-
+			player.lastCmd = player.CMD_STRAIGHT;
 			afterCycleCallbacks.each(function(c) {
 				c();
 			});
