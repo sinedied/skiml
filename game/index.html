@@ -30,7 +30,7 @@
         <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/main.css">
         <link rel="stylesheet" href="css/skifree.css">
-        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+        <link rel="stylesheet" href="css/jquery-ui.css">
         <script src="js/vendor/modernizr-2.6.2.min.js"></script>
     </head>
     <body>
@@ -74,7 +74,7 @@
             dialog = $("#score-dialog-form").dialog({
                 autoOpen: false,
                 height: 400,
-                width: 350,
+                width: 420,
                 modal: true,
                 buttons: {
                     "Submit your score": () => {
@@ -83,12 +83,11 @@
                         console.log('Email: ' + email + ' Name: ' + name);
                         var myHeaders = new Headers();
                         myHeaders.append('Content-Type', 'application/json');
-                        debugger;
                         fetch("http://localhost:3030/scores", {
                             method: "POST",
                             headers: myHeaders,
                             body: JSON.stringify({
-                                playerId: 21,
+                                playerId: email,
                                 name: name,
                                 score: $("#score-dialog-form").data('scoreValue')
                             })

@@ -142,8 +142,7 @@ var tf = require('@tensorflow/tfjs');
         }
 
         this.processScore = function(player) {
-            console.log('aiBrain: process score');
-            alert('YOUR SCORE IS: ');
+            //window.dispatchEvent(new CustomEvent('open-score-dialog', {detail: 12232}));
             // TODO
 
             // FPETODO en mode dev, on veut pas que ca recommence... this.reset();
