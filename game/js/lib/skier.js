@@ -158,6 +158,8 @@ if (typeof navigator !== 'undefined') {
 			}
 		}
 
+		that.forceSetDiscreteDirection = setDiscreteDirection
+
 		function getBeingEatenSprite() {
 			return 'blank';
 		}

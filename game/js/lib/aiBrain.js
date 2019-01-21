@@ -8,13 +8,13 @@ var tf = require('@tensorflow/tfjs');
 
         this.trainingVectors = []; // TODO we should use stream input for brainjs
 
-        this.LEARNING_STEP_COUNT = 1000;
-        this.REPLAY_STEP_COUNT = 10000;
-        this.MODEL_INPUT_SIZE = 16
+        this.LEARNING_STEP_COUNT = 500;
+        this.REPLAY_STEP_COUNT = 5000;
+        this.MODEL_INPUT_SIZE = 23
         if (this.useMouse) {
             this.MODEL_OUTPUT_SIZE = 1
         } else {
-            this.MODEL_OUTPUT_SIZE = 4
+            this.MODEL_OUTPUT_SIZE = 8
         }
 
         this.reset = function() {
@@ -47,6 +47,7 @@ var tf = require('@tensorflow/tfjs');
         }
 
         this.predictModel = function(inputs) {
+            console.log(inputs)
             const inputTensors = tf.tensor2d(inputs, [1, this.MODEL_INPUT_SIZE]);
             modelPrediction = this.model.predict(inputTensors);
             modelPrediction.print();
@@ -56,7 +57,11 @@ var tf = require('@tensorflow/tfjs');
                 return [modelPrediction.get(0, 0), // match skier.CMD_... enum
                     modelPrediction.get(0, 1),
                     modelPrediction.get(0, 2),
-                    modelPrediction.get(0, 3)];
+                    modelPrediction.get(0, 3),
+                    modelPrediction.get(0, 4),
+                    modelPrediction.get(0, 5),
+                    modelPrediction.get(0, 6),
+                    modelPrediction.get(0, 7)];
             }
         }
 
@@ -82,8 +87,8 @@ var tf = require('@tensorflow/tfjs');
                         outputs: this.getAngle(mouseMapPosition, player.mapPosition)
                     });
                 } else {
-                    let outputs = [0.0, 0.0, 0.0, 0.0];
-                    outputs[player.lastCmd] = 1.0;
+                    let outputs = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+                    outputs[currentSituation.playerInputs.dir] = 1.0;
                     console.log('player.lastCmd: ', player.lastCmd);
                     if (currentSituation.playerInputs.dir !== 0 // east
                         && currentSituation.playerInputs.dir !== 6) { // west
@@ -191,7 +196,7 @@ var tf = require('@tensorflow/tfjs');
 				dummyInput: {x: 0, y: 0, type: 0, dist: 0},
 				convert: function() {
 					let result = this.envInputs.flatMap(x => [x.x, x.y, x.type]); // normaliser a la hache??
-					result.push(this.playerInputs.dir);
+					result = result.concat(this.playerInputs.dir);
 					return result;
 				}
 			}
@@ -207,13 +212,18 @@ var tf = require('@tensorflow/tfjs');
                 west: 6,
                 south: 7 
             };
-			iaInputs.playerInputs = { dir: directionLabelToNum[player.getMyDiscreteDirection()] };
+
+            playerDir = new Array(8).fill(0)
+
+            playerDir[directionLabelToNum[player.getMyDiscreteDirection()]] = 1
+
+			iaInputs.playerInputs = { dir: playerDir };
 
 			staticObjects.each(obj => {
 				if (!obj.deleted) {
                     let delta = {x: obj.canvasX - player.mapPosition[0],
                                  y: obj.canvasY - player.mapPosition[1]};
-					iaInputs.envInputs.push({ x: delta.x, 
+					iaInputs.envInputs.push({ x: delta.x,
 						y: delta.y,
                         type: 0,  // comment typer les objets?
                         dist: Math.abs(delta.x * delta.x + delta.y * delta.y)
@@ -235,6 +245,8 @@ var tf = require('@tensorflow/tfjs');
             // we take 5 nearest objects
             iaInputs.envInputs.sort((a, b) => a.dist - b.dist);
             iaInputs.envInputs = iaInputs.envInputs.slice(0, 5);
+
+            console.log(iaInputs)
             
 			// we complete up to 5
 			for (let i = 0; i < 5; ++i) {

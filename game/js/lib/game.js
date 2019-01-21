@@ -87,17 +87,19 @@ var AiBrain = require('./aiBrain');
 						let maxVal = -1;
 						let maxIndex = -1;
 						aiCommand.forEach((x, i) => { if (i > 0 && (x > maxVal || maxVal === -1)) {maxIndex = i; maxVal = x} });
-						switch (maxIndex) {
-							case player.CMD_STRAIGHT: default:
-								break;
-							case player.CMD_EAST:
-								player.turnEast();
-								break;
-							case player.CMD_WEST:
-								player.turnWest();
-								break;
-						}
+						const directionLabelToNum = {
+                                        0:"east",
+                                        1:"esEast",
+                                        2:"sEast",
+                                        3:"south",
+                                        4:"sWest",
+                                        5:"wsWest",
+                                        6:"west",
+                                        7:"south"
+                                    };
+                        player.forceSetDiscreteDirection(directionLabelToNum[maxIndex])
 					}
+
 					// use player.mapPosition[0] inhibit mouse handling while preserving move
 					player.setMapPositionTarget(player.mapPosition[0], mouseMapPosition[1]);
 				}
