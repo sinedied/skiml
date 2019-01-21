@@ -8,7 +8,7 @@ var tf = require('@tensorflow/tfjs');
 
         this.trainingVectors = []; // TODO we should use stream input for brainjs
 
-        this.LEARNING_STEP_COUNT = 500;
+        this.LEARNING_STEP_COUNT = 1000;
         this.REPLAY_STEP_COUNT = 10000;
         this.MODEL_INPUT_SIZE = 16
         if (this.useMouse) {
@@ -26,21 +26,23 @@ var tf = require('@tensorflow/tfjs');
 
         this.buildModel = function() {
             this.model = tf.sequential();
-            this.model.add(tf.layers.dense({units: 10, inputShape: [this.MODEL_INPUT_SIZE]}));
-            this.model.add(tf.layers.dense({units: this.MODEL_OUTPUT_SIZE}));
+            this.model.add(tf.layers.dense({units: 10, inputShape: [this.MODEL_INPUT_SIZE], activation:'tanh'}));
 
             if (this.useMouse) {
-                this.model.add(tf.layers.activation('sigmoid'))
-                this.model.compile({loss: 'meanSquaredError', optimizer: 'adam'})
+                last_activation = 'sigmoid'
+                loss = 'meanSquaredError'
             } else {
-                this.model.add(tf.layers.activation('sigmoid'))
-                this.model.compile({loss: 'categoricalCrossentropy', optimizer: 'adam'})
+                last_activation = 'softmax'
+                loss = 'categoricalCrossentropy'
             }
+
+           this.model.add(tf.layers.dense({units: this.MODEL_OUTPUT_SIZE, activation: last_activation}));
+           this.model.compile({loss: loss, optimizer: 'adam'});
         }
 
-        this.trainModel = function(inputs, outputs) {
-            const inputTensors = tf.tensor2d(inputs, [this.LEARNING_STEP_COUNT, this.MODEL_INPUT_SIZE])
-            const outputTensors = tf.tensor2d(outputs, [this.LEARNING_STEP_COUNT, this.MODEL_OUTPUT_SIZE])
+        this.trainModel = function(inputs, outputs, nb_examples) {
+            const inputTensors = tf.tensor2d(inputs, [nb_examples, this.MODEL_INPUT_SIZE])
+            const outputTensors = tf.tensor2d(outputs, [nb_examples, this.MODEL_OUTPUT_SIZE])
             this.model.fit(inputTensors, outputTensors, {epochs: 10})
         }
 
@@ -87,7 +89,7 @@ var tf = require('@tensorflow/tfjs');
                         && currentSituation.playerInputs.dir !== 6) { // west
                         this.trainingVectors.push({
                             inputs: currentSituation,
-                            outputs: { outputs }
+                            outputs: outputs
                         });
                     }
                 }
@@ -111,7 +113,9 @@ var tf = require('@tensorflow/tfjs');
 
                         // faire un pre apprentissage base sur du preprocessing (transfert de learning)
 
-                        this.trainModel(dataForTraining.flatMap(e => e.input), dataForTraining.flatMap(e => e.output));
+                        this.trainModel(dataForTraining.flatMap(e => e.input),
+                        dataForTraining.flatMap(e => e.output),
+                        dataForTraining.length);
 					}
                 }
                 console.log('aiBrain: replay');
